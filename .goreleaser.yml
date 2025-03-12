@@ -1,0 +1,85 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+    main: ./cmd/main.go
+
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - LICENSE*
+      - README*
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+      - '^v\d+\.\d+\.\d+'
+
+release:
+  mode: replace
+  header: |
+    ## GoPutFlix {{ .Tag }}
+
+    GoPutFlix is a command-line application to browse and stream videos from your Put.io account directly to VLC media player.
+
+    ### Features
+    - Browse your Put.io files and folders
+    - Stream videos directly to VLC without downloading
+    - Cross-platform support (Windows, macOS, Linux)
+    - Simple CLI navigation
+
+  footer: |
+    **Full Changelog**: https://github.com/alexraskin/goputflix/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+brews:
+  - name: goputflix
+    repository:
+      owner: alexraskin
+      name: goputflix
+    commit_author:
+      name: GitHub Actions
+      email: bot@alexraskin.com
+    directory: Formula
+    homepage: "https://github.com/alexraskin/goputflix"
+    description: "A CLI tool to browse and stream videos from your Put.io account directly to VLC media player" 
